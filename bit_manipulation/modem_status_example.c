@@ -7,6 +7,7 @@
 #define ROAMING_BIT     3
 
 #define CHECK_BIT(reg, bit) ((reg) & (1 << (bit)))
+#define STATUS_MASK ( (1 << LINK_ACTIVE_BIT) | (1 << MODE_5G_BIT) )
 
 void check_modem_status(uint8_t modem_register) {
     if (CHECK_BIT(modem_register, LINK_ACTIVE_BIT)) {
@@ -29,6 +30,11 @@ int main() {
     // Modem is connected (link active), weak signal, 5G enabled, roaming enabled
 
     check_modem_status(modem_status);
+
+    // Bitmasking for Multi-bit Checking: Combine multiple checks using bitwise AND with a mask.
+    if (modem_status & STATUS_MASK) {
+        printf("Modem is connected and in 5G mode\n");
+    }
 
     return 0;
 }
