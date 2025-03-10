@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define QUEUE_SIZE 4
+#define QUEUE_SIZE 4   // Only 3 elements can be stored in Circular Queue
 
 /*
 
