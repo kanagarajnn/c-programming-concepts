@@ -7,7 +7,7 @@ void print_binary(unsigned int num) {
     printf("\n");
 }
 
-// Approach 1: Using XOR Mask based approach
+// Approach 1: Using Mask based approach
 unsigned int swap_odd_even_bits_xor(unsigned int n) {
     // Mask for even bits (0xAAAAAAAA = 10101010101010101010101010101010 in binary)
     unsigned int even_mask = 0xAAAAAAAA; 
@@ -78,7 +78,7 @@ unsigned int swap_odd_even_bits_lookup(unsigned int n) {
 int main() {
     unsigned int n = 23; // Binary: 00010111
     
-    // Approach 1: Using XOR Mask based approach
+    // Approach 1: Using Mask based approach
     printf("Before Swap:\n");
     print_binary(n);
     n = swap_odd_even_bits_xor(n);
