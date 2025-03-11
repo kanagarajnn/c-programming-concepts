@@ -1,0 +1,119 @@
+#include <stdio.h>
+#include <stdint.h>
+
+#define POOL_SIZE 128  // Supports up to 128 slots
+#define BITMAP_WORD_SIZE 32  // Each uint32_t covers 32 slots
+#define BITMAP_WORDS (POOL_SIZE >> 5)  // Number of uint32_t words (POOL_SIZE / 32)
+
+// Resource Pool Structure
+typedef struct {
+    int resources[POOL_SIZE];  // Statically allocated integer pool
+    uint32_t bitmap[BITMAP_WORDS];  // Multi-word bitmap for tracking free slots
+} ResourcePool;
+
+// Initialize the pool (all slots start as free)
+void init_pool(ResourcePool* pool) {
+    for (int i = 0; i < BITMAP_WORDS; i++) {
+        pool->bitmap[i] = 0;  // All bits set to 0 (all slots free)
+    }
+}
+
+// Find first free slot in the multi-word bitmap
+int find_first_free_slot(ResourcePool* pool, int* word_index) {
+    for (int i = 0; i < BITMAP_WORDS; i++) {
+        if (pool->bitmap[i] != 0xFFFFFFFF) {  // If there are free slots
+            *word_index = i;
+            return __builtin_ctz(~pool->bitmap[i]);  // Find first free bit
+        }
+    }
+    return -1;  // No free slots available
+}
+
+// Allocate a single integer
+int* allocate(ResourcePool* pool) {
+    int word_index;
+    int bit_index = find_first_free_slot(pool, &word_index);
+    if (bit_index == -1) return NULL;  // No free slots
+
+    pool->bitmap[word_index] |= (1U << bit_index);  // Mark slot as allocated
+
+    int index = (word_index << 5) | bit_index;  // Compute absolute index
+    return &pool->resources[index];
+}
+
+// Bulk allocate multiple resources
+size_t bulk_allocate(ResourcePool* pool, int** out_resources, size_t count) {
+    size_t allocated = 0;
+
+    for (int i = 0; i < count && allocated < count; i++) {
+        int word_index;
+        int bit_index = find_first_free_slot(pool, &word_index);
+        if (bit_index == -1) break;  // No more free slots available
+
+        pool->bitmap[word_index] |= (1U << bit_index);  // Mark slot as allocated
+        int index = (word_index << 5) | bit_index;  // Compute absolute index
+        out_resources[allocated++] = &pool->resources[index];  // Store allocated pointer
+    }
+
+    return allocated;  // Return the number of resources successfully allocated
+}
+
+// Free a single integer
+void free_resource(ResourcePool* pool, int* resource) {
+    int index = resource - pool->resources;  // Compute absolute index
+    int word_index = index >> 5;  // Compute word index (index / 32)
+    int bit_index = index & 31;   // Compute bit index (index % 32)
+
+    pool->bitmap[word_index] &= ~(1U << bit_index);  // Mark slot as free
+}
+
+// Bulk free multiple resources
+void bulk_free(ResourcePool* pool, int** resources, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        free_resource(pool, resources[i]);
+    }
+}
+
+// Test function
+int main() {
+    ResourcePool pool;
+    init_pool(&pool);
+
+    // Test single allocation
+    int* res1 = allocate(&pool);
+    int* res2 = allocate(&pool);
+    int* res3 = allocate(&pool);
+
+    if (res1) *res1 = 42;
+    if (res2) *res2 = 99;
+    if (res3) *res3 = 77;
+
+    printf("Allocated Resource 1: %p, Value: %d\n", res1, res1 ? *res1 : -1);
+    printf("Allocated Resource 2: %p, Value: %d\n", res2, res2 ? *res2 : -1);
+    printf("Allocated Resource 3: %p, Value: %d\n", res3, res3 ? *res3 : -1);
+
+    // Bulk allocation
+    int* bulk_resources[10];
+    size_t allocated = bulk_allocate(&pool, bulk_resources, 10);
+    printf("Bulk Allocated %zu Resources\n", allocated);
+
+    for (size_t i = 0; i < allocated; i++) {
+        *bulk_resources[i] = i + 100;
+        printf("Bulk Allocated Resource %zu: %p, Value: %d\n", i, bulk_resources[i], *bulk_resources[i]);
+    }
+
+    // Free first slot
+    free_resource(&pool, res1);
+    printf("Freed Resource 1\n");
+
+    // Bulk free
+    bulk_free(&pool, bulk_resources, allocated);
+    printf("Bulk Freed %zu Resources\n", allocated);
+
+    // Test reallocation
+    int* res4 = allocate(&pool);
+    if (res4) *res4 = 55;
+    printf("Reallocated Resource 4: %p, Value: %d\n", res4, res4 ? *res4 : -1);
+
+    return 0;
+}
