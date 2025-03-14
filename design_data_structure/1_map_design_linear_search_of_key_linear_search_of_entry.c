@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <limits.h>
 
-#define MAX_KEYS 10000   // Maximum number of unique keys
+#define MAX_KEYS 1000   // Maximum number of unique keys
 #define MAX_ENTRIES 50   // Maximum number of timestamp-value pairs per key
 
 // Structure to hold a timestamp-value pair
@@ -30,7 +30,7 @@ void init_time_series_db(TimeSeriesDB *db) {
 }
 
 // Linear Search of Key
-int find_key_index(TimeSeriesDB *db, int key) {
+int find_key_index(const TimeSeriesDB *db, int key) {
     for (int i = 0; i < db->count; i++) {
         if (db->key_series[i].key == key) {
             return i;  // Directly return the index when found
@@ -57,11 +57,11 @@ void set(TimeSeriesDB *db, int key, int timestamp, int value) {
 
 // Retrieve the most recent value before or at the given timestamp using linear search
 // Assumes the entries are in sorted order
-int get(TimeSeriesDB *db, int key, int timestamp) {
+int get(const TimeSeriesDB *db, int key, int timestamp) {
     int idx = find_key_index(db, key);
     if (idx == -1) return -1; // Key not found
     
-    TimestampValue *entries = db->key_series[idx].entries;
+    const TimestampValue *entries = db->key_series[idx].entries;
     int count = db->key_series[idx].count;
     int best = -1;
     
