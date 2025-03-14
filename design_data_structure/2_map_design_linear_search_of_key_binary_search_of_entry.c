@@ -19,7 +19,7 @@ typedef struct {
 
 // Structure to manage multiple keys and their respective time-value mappings
 typedef struct {
-    KeyTimeSeries key_series[MAX_KEYS]; // Hash map representation
+    KeyTimeSeries key_series[MAX_KEYS];
     int count; // Number of keys stored
 } TimeSeriesDB;
 
