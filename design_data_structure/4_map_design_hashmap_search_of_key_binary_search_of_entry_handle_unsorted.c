@@ -7,7 +7,7 @@
 #include <assert.h>
 
 #define MAX_KEYS 1000   // Maximum number of unique keys
-#define MAX_ENTRIES 5   // Maximum number of timestamp-value pairs per key
+#define MAX_ENTRIES 3   // Maximum number of timestamp-value pairs per key
 #define EMPTY_KEY -1    // Key not in use
 
 // Structure to hold a timestamp-value pair
@@ -53,6 +53,11 @@ int find_key_index(const TimeSeriesDB *db, int key) {
 
 // Insert a key-timestamp-value pair in sorted order
 void set(TimeSeriesDB *db, int key, int timestamp, int value) {
+    if (key >= MAX_KEYS || key < 0) {
+        printf("Error: Invalid key %d\n", key);
+        return;
+    }
+
     int idx = find_key_index(db, key);
 
     // If key is not found, insert a new key in the database    
@@ -71,10 +76,21 @@ void set(TimeSeriesDB *db, int key, int timestamp, int value) {
     TimestampValue *entries = db->key_series[idx].entries;
     int count = db->key_series[idx].count;
     
-    // Check if space is available for a new entry
+    // Check if space is available for a new entry, if not free the oldest timestamp entry (FIFO)
+    // 10, 20, 30 -> 20, 30
     if (count >= MAX_ENTRIES) {
-        printf("No space left for key %d\n", key);
-        return;
+        // printf("No space left for key %d\n", key);
+        // return;
+
+        printf("Dropping oldest entry for key %d, Timestamp: %d, Value: %d\n", key, entries[0].timestamp, entries[0].value);
+
+        // Shift all values to one position by left
+        for (int i = 1; i < MAX_ENTRIES; i++) {
+            entries[i - 1] = entries[i];  // shift left
+        }
+
+        db->key_series[idx].count--;
+        count--;
     }
 
     // Insert the new entry in sorted order (Shift elements to maintain order)
@@ -141,6 +157,7 @@ int main() {
     init_time_series_db(&db);
 
     // Insert test data
+    set(&db, 100, 223, 77);
     set(&db, 100, 267, 23);
     set(&db, 100, 254, 65);
     set(&db, 100, 250, 42);
