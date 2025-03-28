@@ -6,7 +6,7 @@ int main() {
 
     // printf("%d", a + ++b); // Prints 8
 
-    printf("%d", a+++++b); // Error 
+    // printf("%d", a+++++b); // Error 
     // a ++ ++ + b // Error
     return 0;
 }
